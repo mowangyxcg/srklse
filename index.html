@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>两层生日蛋糕粒子效果</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: black;
+            font-family: Arial, sans-serif;
+        }
+        #fireworksCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="fireworksCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById('fireworksCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const particles = [];
+        const colors = [
+            '255, 69, 0', // Red-Orange
+            '255, 140, 0', // Dark Orange
+            '255, 165, 0', // Orange
+            '255, 99, 71', // Tomato
+            '255, 255, 0', // Yellow
+            '255, 182, 193', // Light Pink
+            '255, 105, 180', // Hot Pink
+            '238, 130, 238' // Violet
+        ];
+
+        let showMessage = false;
+        let messageAlpha = 0;
+        let flashSpeed = 0.02;
+
+        class Particle {
+            constructor(x, y, color, isFlame = false, isSmoke = false, isFirework = false) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.alpha = isFlame ? Math.random() : 1;
+                this.size = isFirework ? 4 : 2;
+                this.flashSpeed = isFlame ? Math.random() * 0.02 + 0.01 : 0;
+                this.isFlame = isFlame;
+                this.isSmoke = isSmoke;
+                this.isFirework = isFirework;
+                this.life = isFirework ? 100 : 50;
+            }
+
+            update() {
+                if (this.isFlame) {
+                    this.alpha += this.flashSpeed;
+                    if (this.alpha > 1 || this.alpha < 0) {
+                        this.flashSpeed = -this.flashSpeed;
+                    }
+                } else if (this.isSmoke) {
+                    this.alpha -= 0.01;
+                } else if (this.isFirework) {
+                    this.life -= 1;
+                    this.alpha -= 0.01;
+                }
+                this.size *= this.alpha;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.fillStyle = `rgba(${this.color},${this.alpha})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function createFirework(x, y) {
+            for (let i = 0; i < 100; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 3 + 1;
+                const vx = Math.cos(angle) * speed;
+                const vy = Math.sin(angle) * speed;
+                particles.push(new Particle(x, y, colors[Math.floor(Math.random() * colors.length)], false, false, true, vx, vy));
+            }
+        }
+
+        function displayMessage() {
+            ctx.save();
+            ctx.font = 'bold 100px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = `rgba(255, 255, 0, ${messageAlpha})`;
+            ctx.fillText('生日快乐', canvas.width / 2, canvas.height / 2);
+            ctx.restore();
+            messageAlpha += flashSpeed;
+            if (messageAlpha > 1 || messageAlpha < 0) {
+                flashSpeed = -flashSpeed;
+            }
+        }
+
+        function updateParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.update();
+                if (p.alpha <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+        }
+
+        function drawParticles() {
+            for (const p of particles) {
+                p.draw();
+            }
+        }
+
+        function loop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            updateParticles();
+            drawParticles();
+            if (showMessage) {
+                displayMessage();
+            }
+            requestAnimationFrame(loop);
+        }
+
+        function candleBlowOut() {
+            showMessage = true;
+            createFirework(canvas.width * 0.25, canvas.height * 0.5);
+            createFirework(canvas.width * 0.75, canvas.height * 0.5);
+            createFirework(canvas.width * 0.5, canvas.height * 0.25);
+            createFirework(canvas.width * 0.5, canvas.height * 0.75);
+        }
+
+        // Simulate candle blow out after 5 seconds
+        setTimeout(candleBlowOut, 5000);
+
+        loop();
+    </script>
+</body>
+</html>
